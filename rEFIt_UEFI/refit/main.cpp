@@ -733,6 +733,21 @@ void LOADER_ENTRY::FilterBootPatches() {
   }
 }
 
+void LOADER_ENTRY::FilterKextsToBlock() {
+  if (KernelAndKextPatches.KextsToBlock.isEmpty()) {
+    return;
+  }
+
+  size_t settingsCount = gSettings.KernelAndKextPatches.KextsToBlock.size();
+  size_t entryCount = KernelAndKextPatches.KextsToBlock.size();
+  size_t count = (settingsCount < entryCount) ? settingsCount : entryCount;
+
+  for (size_t i = 0; i < count; ++i) {
+    KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue =
+        gSettings.KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue;
+  }
+}
+
 //
 // Null ConOut OutputString() implementation - for blocking
 // text output from boot.efi when booting in graphics mode
@@ -1912,6 +1927,7 @@ void LOADER_ENTRY::StartLoader() {
     FilterKextPatches();
     FilterKernelPatches();
     FilterBootPatches();
+    FilterKextsToBlock();
     if (LoadedImage &&
         !BooterPatch((UINT8 *)LoadedImage->ImageBase, LoadedImage->ImageSize)) {
       DBG("Will not patch boot.efi\n");
