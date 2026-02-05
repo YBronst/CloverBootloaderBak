@@ -191,6 +191,8 @@ public:
   XBool Disabled = XBool();
   XString8 MatchOS = XString8();
   XString8 Name = XString8();
+  INPUT_ITEM MenuItem = INPUT_ITEM();
+  XString8 Label = XString8();
 
 	#if __cplusplus > 201703L
 		XBool operator == (const KEXT_TO_BLOCK&) const = default;
@@ -201,6 +203,8 @@ public:
     if ( !(Disabled == other.Disabled ) ) return false;
     if ( !(MatchOS == other.MatchOS ) ) return false;
     if ( !(Name == other.Name ) ) return false;
+    if ( MenuItem != other.MenuItem ) return false;
+    if ( !(Label == other.Label ) ) return false;
     return true;
   }
   void takeValueFrom(const ConfigPlistClass::KernelAndKextPatches_Class::KernelAndKextPatches_KextsToBlock_Class& other)
@@ -209,6 +213,8 @@ public:
     Disabled = other.dgetDisabled();
     MatchOS = other.dgetMatchOS();
     Name = other.dgetName();
+    MenuItem.BValue = !other.dgetDisabled();
+    Label = Comment.notEmpty() ? Comment : Name;
   }
 
   XBool ShouldBlock(const MacOsVersion& CurrOS) const;
