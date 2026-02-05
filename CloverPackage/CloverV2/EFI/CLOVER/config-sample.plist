@@ -751,8 +751,19 @@
             <true/>
             <key>AppleRTC</key>
             <false/>
-            <key>BlockSkywalk</key>
-            <false/>
+            <key>KextsToBlock</key>
+            <array>
+                <dict>
+                    <key>Comment</key>
+                    <string>BlockSkywalk</string>
+                    <key>Disabled</key>
+                    <false/>
+                    <key>MatchOS</key>
+                    <string>14.x,15.x,26.x</string>
+                    <key>Name</key>
+                    <string>com.apple.Skywalk</string>
+                </dict>
+            </array>
             <key>BootPatches</key>
             <array>
                 <dict>
