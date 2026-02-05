@@ -393,49 +393,47 @@ void FillInputs(XBool New)
   InputItems[InputItemsCount++].BValue = gSettings.ACPI.AutoMerge;
   InputItems[InputItemsCount].ItemType = BoolValue; //114
   InputItems[InputItemsCount++].BValue = gSettings.Graphics.RadeonDeInit;
-  InputItems[InputItemsCount].ItemType = BoolValue; //115
-  InputItems[InputItemsCount++].BValue = gSettings.KernelAndKextPatches.BlockSkywalk;
-  InputItems[InputItemsCount].ItemType = RadioSwitch;  //116 - DSDT chooser
-  InputItems[InputItemsCount++].IValue = 116;
+  InputItems[InputItemsCount].ItemType = RadioSwitch;  //115 - DSDT chooser
+  InputItems[InputItemsCount++].IValue = 115;
 
-  InputItems[InputItemsCount].ItemType = ASString;  //117
+  InputItems[InputItemsCount].ItemType = ASString;  //116
 	InputItems[InputItemsCount++].SValue.SWPrintf("%s", gSettings.Smbios.EfiVersion.c_str());
-  InputItems[InputItemsCount].ItemType = ASString;  //118
+  InputItems[InputItemsCount].ItemType = ASString;  //117
 	InputItems[InputItemsCount++].SValue.SWPrintf("%s", gSettings.RtVariables.BooterCfgStr.c_str());
 
-  InputItems[InputItemsCount].ItemType = RadioSwitch;  //119 - Audio chooser
-  InputItems[InputItemsCount++].IValue = 119;
-  InputItems[InputItemsCount].ItemType = Decimal;  //120
+  InputItems[InputItemsCount].ItemType = RadioSwitch;  //118 - Audio chooser
+  InputItems[InputItemsCount++].IValue = 118;
+  InputItems[InputItemsCount].ItemType = Decimal;  //119
   InputItems[InputItemsCount++].SValue.SWPrintf("%04d", DefaultAudioVolume);
   
-  InputItems[InputItemsCount].ItemType = BoolValue; //121
+  InputItems[InputItemsCount].ItemType = BoolValue; //120
   InputItems[InputItemsCount++].BValue = gSettings.KernelAndKextPatches.KPPanicNoKextDump;
-  InputItems[InputItemsCount].ItemType = Decimal;  //122
+  InputItems[InputItemsCount].ItemType = Decimal;  //121
   InputItems[InputItemsCount++].SValue.SWPrintf("%04hhu", gSettings.Quirks.OcBooterQuirks.ProvideMaxSlide);
-  InputItems[InputItemsCount].ItemType = BoolValue; //123
+  InputItems[InputItemsCount].ItemType = BoolValue; //122
   InputItems[InputItemsCount++].BValue = gSettings.GUI.ProvideConsoleGop;
-  InputItems[InputItemsCount].ItemType = BoolValue; //124
+  InputItems[InputItemsCount].ItemType = BoolValue; //123
   InputItems[InputItemsCount++].BValue = gSettings.ACPI.FixHeaders;
 
-  InputItems[InputItemsCount].ItemType = Hex;  //125
+  InputItems[InputItemsCount].ItemType = Hex;  //124
   InputItems[InputItemsCount++].SValue.SWPrintf("0x%016llX", gSettings.Smbios.ExtendedFirmwareFeatures);
-  InputItems[InputItemsCount].ItemType = Hex;  //126
+  InputItems[InputItemsCount].ItemType = Hex;  //125
   InputItems[InputItemsCount++].SValue.SWPrintf("0x%016llX", gSettings.Smbios.ExtendedFirmwareFeaturesMask);
-  InputItems[InputItemsCount].ItemType = Decimal;  //127
+  InputItems[InputItemsCount].ItemType = Decimal;  //126
   InputItems[InputItemsCount++].SValue.SWPrintf("%04d", gSettings.Quirks.OcBooterQuirks.ResizeAppleGpuBars);
 
-  InputItems[InputItemsCount].ItemType = BoolValue; //128
+  InputItems[InputItemsCount].ItemType = BoolValue; //127
   InputItems[InputItemsCount++].BValue = gSettings.Quirks.OcKernelQuirks.ProvideCurrentCpuInfo;
 
-  InputItems[InputItemsCount].ItemType = BoolValue; //129
+  InputItems[InputItemsCount].ItemType = BoolValue; //128
   InputItems[InputItemsCount++].BValue = gResetSMC;
 
-  InputItems[InputItemsCount].ItemType = Decimal;  //130
+  InputItems[InputItemsCount].ItemType = Decimal;  //129
   InputItems[InputItemsCount++].SValue.SWPrintf("%08d", gSettings.Quirks.OcBooterQuirks.TscSyncTimeout);
-  InputItems[InputItemsCount].ItemType = Hex;  //131
+  InputItems[InputItemsCount].ItemType = Hex;  //130
   InputItems[InputItemsCount++].SValue.SWPrintf("0x%08X", gSettings.Smbios.SFakeCPU);
 
-  InputItems[InputItemsCount].ItemType = BoolValue; //132
+  InputItems[InputItemsCount].ItemType = BoolValue; //131
   InputItems[InputItemsCount++].BValue = gSettings.Quirks.OcKernelQuirks.XhciPortLimit;
 
   //menu for drop table
@@ -984,25 +982,21 @@ void ApplyInputs(void)
   }
   i++; //115
   if (InputItems[i].Valid) {
-    gSettings.KernelAndKextPatches.BlockSkywalk = InputItems[i].BValue != 0;
-  }
-  i++; //116
-  if (InputItems[i].Valid) {
     if (OldChosenDsdt == 0xFFFF) {
       gSettings.ACPI.DSDT.DsdtName = L"BIOS.aml"_XSW;
     } else {
       gSettings.ACPI.DSDT.DsdtName = DsdtsList[OldChosenDsdt];
     }
   }
-  i++; //117
+  i++; //116
   if (InputItems[i].Valid) {
 	  gSettings.Smbios.EfiVersion = InputItems[i].SValue;
   }
-  i++; //118
+  i++; //117
   if (InputItems[i].Valid) {
 	  gSettings.RtVariables.BooterCfgStr = InputItems[i].SValue;
   }
-  i++; //119
+  i++; //118
   if (InputItems[i].Valid) {
     EFI_DEVICE_PATH_PROTOCOL*  DevicePath = NULL;
     int TmpIndex;
@@ -1026,7 +1020,7 @@ void ApplyInputs(void)
 //      DBG(" sound written to nvram variables\n");
     }
   }
-  i++; //120
+  i++; //119
   if (InputItems[i].Valid) {
     DefaultAudioVolume = (UINT8)StrDecimalToUintn(InputItems[i].SValue.wc_str());
 //    DBG(" set output volume to %d\n", DefaultAudioVolume);
@@ -1039,37 +1033,37 @@ void ApplyInputs(void)
                      EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
                      1, &DefaultAudioVolume);
   }
-  i++; //121
+  i++; //120
   if (InputItems[i].Valid) {
     gSettings.KernelAndKextPatches.KPPanicNoKextDump = InputItems[i].BValue != 0;
     GlobalConfig.gBootChanged = true;
   }
-  i++; //122
+  i++; //121
   if (InputItems[i].Valid) {
     gSettings.Quirks.OcBooterQuirks.ProvideMaxSlide = (uint8_t)StrDecimalToUintn(InputItems[i].SValue.wc_str());
     DBG(" set MaxSlide = %hhu\n", gSettings.Quirks.OcBooterQuirks.ProvideMaxSlide);
   }
-  i++; //123
+  i++; //122
   if (InputItems[i].Valid) {
     gSettings.GUI.ProvideConsoleGop = InputItems[i].BValue != 0;
     DBG("applied ConsoleGopEnable=%s\n", gSettings.GUI.ProvideConsoleGop ? "Y" : "N" );
   }
-  i++; //124
+  i++; //123
   if (InputItems[i].Valid) {
     gSettings.ACPI.FixHeaders = InputItems[i].BValue != 0;
     DBG("applied gSettings.ACPI.FixHeaders=%s\n", gSettings.ACPI.FixHeaders ? "Y" : "N" );
   }
-  i++; //125
+  i++; //124
   if (InputItems[i].Valid) {
     gSettings.Smbios.ExtendedFirmwareFeatures = StrHexToUint64(InputItems[i].SValue.wc_str());
     DBG("applied ExtendedFirmwareFeatures=0x%llX\n", gSettings.Smbios.ExtendedFirmwareFeatures);
   }
-  i++; //126
+  i++; //125
   if (InputItems[i].Valid) {
     gSettings.Smbios.ExtendedFirmwareFeaturesMask = StrHexToUint64(InputItems[i].SValue.wc_str());
     DBG("applied ExtendedFirmwareFeaturesMask=0x%llX\n", gSettings.Smbios.ExtendedFirmwareFeaturesMask);
   }
-  i++; //127
+  i++; //126
   if (InputItems[i].Valid) {
     INTN Minus = 0;
     if (InputItems[i].SValue[0] == '-') {
@@ -1081,12 +1075,12 @@ void ApplyInputs(void)
     }
     DBG(" set GpuBar = %d\n", gSettings.Quirks.OcBooterQuirks.ResizeAppleGpuBars);
   }
-  i++; //128
+  i++; //127
   if (InputItems[i].Valid) {
     gSettings.Quirks.OcKernelQuirks.ProvideCurrentCpuInfo = InputItems[i].BValue != 0;
      DBG("applied ProvideCurrentCpuInfo=%s\n", gSettings.Quirks.OcKernelQuirks.ProvideCurrentCpuInfo ? "Y" : "N" );
    }
-  i++; //129
+  i++; //128
   if (InputItems[i].Valid) {
     gResetSMC = InputItems[i].BValue != 0;
     if (gResetSMC) {
@@ -1100,19 +1094,19 @@ void ApplyInputs(void)
       gResetSMC = false;
     }
   }
-  i++; //130
+  i++; //129
   if (InputItems[i].Valid) {
 	  INTN Minus = 0;
 	  gSettings.Quirks.OcBooterQuirks.TscSyncTimeout = (decltype(gSettings.Quirks.OcBooterQuirks.TscSyncTimeout))StrDecimalToUintn(InputItems[i].SValue.data(Minus));
 	  DBG("set TscSyncTimeout=%d\n", gSettings.Quirks.OcBooterQuirks.TscSyncTimeout);
   }
   //gSettings.Smbios.SFakeCPU
-  i++; //131
+  i++; //130
   if (InputItems[i].Valid) {
     gSettings.Smbios.SFakeCPU = (UINT32)StrHexToUint64(InputItems[i].SValue.wc_str());
     DBG("set FakeCPUID=%X\n", gSettings.Smbios.SFakeCPU);
   }
-  i++; //132
+  i++; //131
   if (InputItems[i].Valid) {
     gSettings.Quirks.OcKernelQuirks.XhciPortLimit = InputItems[i].BValue != 0;
      DBG("applied XhciPortLimit=%s\n", gSettings.Quirks.OcKernelQuirks.XhciPortLimit ? "Y" : "N" );
