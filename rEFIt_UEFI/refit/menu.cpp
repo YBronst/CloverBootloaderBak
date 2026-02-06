@@ -86,16 +86,16 @@ INTN LayoutAnimMoveForMenuX = 0;
 #define TEXT_CORNER_HELP      (2)
 #define TEXT_CORNER_OPTIMUS   (3)
 
-REFIT_MENU_ITEM_OPTIONS  MenuEntryOptions (L"Options"_XSW,          1, 0, 'O', ActionEnter);
-REFIT_MENU_ITEM_ABOUT    MenuEntryAbout   (L"About Clover"_XSW,     1, 0, 'A', ActionEnter);
-REFIT_MENU_ITEM_RESET    MenuEntryReset   (L"Restart Computer"_XSW, 1, 0, 'R', ActionSelect);
-REFIT_MENU_ITEM_SHUTDOWN MenuEntryShutdown(L"Exit Clover"_XSW,      1, 0, 'U', ActionSelect);
-REFIT_MENU_ITEM_RETURN   MenuEntryReturn  (L"Return"_XSW,           0, 0,  0,  ActionEnter);
+REFIT_MENU_ITEM_OPTIONS  MenuEntryOptions (L"Options Опции"_XSW,          1, 0, 'O', ActionEnter);
+REFIT_MENU_ITEM_ABOUT    MenuEntryAbout   (L"About Clover О Кловере"_XSW,     1, 0, 'A', ActionEnter);
+REFIT_MENU_ITEM_RESET    MenuEntryReset   (L"Restart Computer Перезагрузка"_XSW, 1, 0, 'R', ActionSelect);
+REFIT_MENU_ITEM_SHUTDOWN MenuEntryShutdown(L"Exit Clover Выход"_XSW,      1, 0, 'U', ActionSelect);
+REFIT_MENU_ITEM_RETURN   MenuEntryReturn  (L"Return Возврат"_XSW,           0, 0,  0,  ActionEnter);
 
-REFIT_MAINMENU_SCREEN MainMenu(1, L"Main Menu"_XSW, L"Automatic boot"_XSW);
-REFIT_MENU_SCREEN AboutMenu(2, L"About"_XSW, L""_XSW);
-REFIT_MENU_SCREEN HelpMenu(3, L"Help"_XSW, L""_XSW);
-REFIT_MENU_SCREEN OptionMenu(4, L"Options"_XSW, L""_XSW);
+REFIT_MAINMENU_SCREEN MainMenu(1, L"Main Menu Главное меню"_XSW, L"Automatic boot"_XSW);
+REFIT_MENU_SCREEN AboutMenu(2, L"About О программе"_XSW, L""_XSW);
+REFIT_MENU_SCREEN HelpMenu(3, L"Help Помощь"_XSW, L""_XSW);
+REFIT_MENU_SCREEN OptionMenu(4, L"Options Опции"_XSW, L""_XSW);
 
 XBool gResetSMC = false;
 extern APPLE_SMC_IO_PROTOCOL        *gAppleSmc;
@@ -1607,7 +1607,7 @@ REFIT_ABSTRACT_MENU_ENTRY *SubMenuGraphics()
   REFIT_MENU_ITEM_OPTIONS   *Entry;
   REFIT_MENU_SCREEN  *SubScreen;
 
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_GRAPHICS, "Graphics Injector->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_GRAPHICS, "Graphics Injector Инжектор графики->"_XS8);
 	SubScreen->AddMenuInfoLine_f("Number of VideoCard%s=%zu",((gConf.GfxPropertiesArray.size()!=1)?"s":""), gConf.GfxPropertiesArray.size());
   SubScreen->AddMenuItemInput(52, "InjectEDID", false);
   SubScreen->AddMenuItemInput(53, "Fake Vendor EDID:", true);
@@ -1691,7 +1691,7 @@ REFIT_ABSTRACT_MENU_ENTRY *SubMenuAudio()
   REFIT_MENU_SCREEN  *SubScreen;
 
   // create the entry in the main menu
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_AUDIO, "Audio tuning->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_AUDIO, "Audio tuning Настройка звука->"_XS8);
 
   // submenu description
   SubScreen->AddMenuInfoLine_f("Choose options to tune the HDA devices");
@@ -1769,7 +1769,7 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuKextPatches()
   REFIT_MENU_SCREEN    *SubScreen;
   REFIT_INPUT_DIALOG   *InputBootArgs;
 
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_KEXTS, "Custom kexts patches->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_KEXTS, "Custom kexts patches Патчи кекстов->"_XS8);
 
   for ( size_t Index = 0; Index < gSettings.KernelAndKextPatches.KextPatches.size(); Index++) {
     InputBootArgs = new REFIT_INPUT_DIALOG;
@@ -1792,10 +1792,10 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuKextsToBlock()
   REFIT_MENU_SCREEN    *SubScreen;
   REFIT_INPUT_DIALOG   *InputBootArgs;
 
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_KEXTS, "Kexts to block->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_KEXTS, "Kexts to block Блокировка кекстов->"_XS8);
 
   if (gSettings.KernelAndKextPatches.KextsToBlock.isEmpty()) {
-    SubScreen->AddMenuInfoLine_f("No KextsToBlock entries.");
+    SubScreen->AddMenuInfoLine_f("No KextsToBlock entries / Нет записей KextsToBlock.");
   } else {
     for (size_t Index = 0; Index < gSettings.KernelAndKextPatches.KextsToBlock.size(); Index++) {
       const auto& entry = gSettings.KernelAndKextPatches.KextsToBlock[Index];
@@ -1926,7 +1926,7 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuKernelPatches()
   REFIT_MENU_SCREEN    *SubScreen;
   REFIT_INPUT_DIALOG   *InputBootArgs;
 
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_KERNELS, "Custom kernel patches->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_KERNELS, "Custom kernel patches Патчи ядра->"_XS8);
 
   for (size_t Index = 0; Index < gSettings.KernelAndKextPatches.KernelPatches.size(); Index++) {
     InputBootArgs = new REFIT_INPUT_DIALOG;
@@ -1948,7 +1948,7 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuBootPatches()
   REFIT_MENU_SCREEN    *SubScreen;
   REFIT_INPUT_DIALOG   *InputBootArgs;
 
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_BOOTER, "Custom booter patches->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_BOOTER, "Custom booter patches Патчи загрузчика->"_XS8);
 
   for (size_t Index = 0; Index < gSettings.KernelAndKextPatches.BootPatches.size(); Index++) {
     InputBootArgs = new REFIT_INPUT_DIALOG;
@@ -1969,7 +1969,7 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuBinaries()
   REFIT_MENU_ITEM_OPTIONS   *Entry;
   REFIT_MENU_SCREEN  *SubScreen;
 
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_BINARIES, "Binaries patching->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_BINARIES, "Binaries patching Патчи бинарников->"_XS8);
 
   SubScreen->AddMenuInfoLine_f("%s", gCPUStructure.BrandString.c_str());
   SubScreen->AddMenuInfoLine_f("Real CPUID: 0x%06X", gCPUStructure.Signature);
@@ -2161,7 +2161,7 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuDSDTPatches()
 
   size_t        PatchDsdtNum = gSettings.ACPI.DSDT.DSDTPatchArray.size();
 
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_DSDT_PATCHES, "Custom DSDT patches->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_DSDT_PATCHES, "Custom DSDT patches Патчи DSDT->"_XS8);
 
   for (size_t Index = 0; Index < PatchDsdtNum; Index++) {
     InputBootArgs = new REFIT_INPUT_DIALOG;
@@ -2210,7 +2210,7 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuACPI()
   REFIT_MENU_SCREEN  *SubScreen;
 
   // create the entry in the options menu
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_ACPI, "ACPI patching->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_ACPI, "ACPI patching Патчи ACPI->"_XS8);
 
   // submenu description
   SubScreen->AddMenuInfoLine_f("Choose options to patch ACPI");
@@ -2455,7 +2455,7 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuSystem()
   REFIT_MENU_SCREEN  *SubScreen;
 
   // create the entry in the options menu
-  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_SYSTEM, "System Parameters->"_XS8);
+  Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_SYSTEM, "System Parameters Параметры системы->"_XS8);
 
   // submenu description
   SubScreen->AddMenuInfoLine_f("Choose options for booted OS");
@@ -2504,7 +2504,7 @@ REFIT_ABSTRACT_MENU_ENTRY* SubMenuQuirks()
   
   // create the entry in the main menu
   Entry = newREFIT_MENU_ITEM_OPTIONS(&SubScreen, ActionEnter, SCREEN_QUIRKS, NullXString8);
-  Entry->Title.SWPrintf("Quirks mask [0x%04x]->", gSettings.Quirks.QuirksMask);
+  Entry->Title.SWPrintf("Quirks mask Квирки [0x%04x]->", gSettings.Quirks.QuirksMask);
   
   // submenu description
   SubScreen->AddMenuInfoLine_f("Choose options to fix memory");
