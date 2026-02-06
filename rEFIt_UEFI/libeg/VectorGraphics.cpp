@@ -561,7 +561,7 @@ void testSVG()
       FreePool(FileData);
       //   Scale = Height / fontSVG->unitsPerEm;
 
-      renderSVGtext(&TextBufferXY, 0, 0, 3, XStringW().takeValueFrom("Clover"), 1);
+      renderSVGtext(&TextBufferXY, 0, 0, 3, XStringW().takeValueFrom("Clover Кловер"), 1);
 //      DBG("text ready to blit\n");
       TextBufferXY.Draw((UGAWidth - Width) / 2,
                 (UGAHeight - Height) / 2);
