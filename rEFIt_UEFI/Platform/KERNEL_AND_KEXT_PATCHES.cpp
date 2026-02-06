@@ -65,7 +65,7 @@ XBool ABSTRACT_PATCH::IsPatchEnabled(const MacOsVersion& CurrOS)
 
 XBool KEXT_TO_BLOCK::ShouldBlock(const MacOsVersion& CurrOS) const
 {
-  if (Disabled || !MenuItem.BValue || Name.isEmpty()) {
+  if (!MenuItem.BValue || Name.isEmpty()) {
     return false;
   }
 
