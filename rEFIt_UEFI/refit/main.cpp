@@ -1648,6 +1648,7 @@ void LOADER_ENTRY::StartLoader() {
           mOpenCoreConfiguration.Kernel.Force.Values[kextIdx]
               ->ExecutablePath.Value);
     }
+    FilterKextsToBlock();
     size_t blockCount = 0;
     for (size_t blockIdx = 0;
          blockIdx < KernelAndKextPatches.KextsToBlock.size(); blockIdx++) {
@@ -1927,7 +1928,6 @@ void LOADER_ENTRY::StartLoader() {
     FilterKextPatches();
     FilterKernelPatches();
     FilterBootPatches();
-    FilterKextsToBlock();
     if (LoadedImage &&
         !BooterPatch((UINT8 *)LoadedImage->ImageBase, LoadedImage->ImageSize)) {
       DBG("Will not patch boot.efi\n");
