@@ -863,14 +863,16 @@ XBool ResolveKextBundlePath(EFI_FILE *Root, const XString8 &bundleId,
     return false;
   }
 
-  if (ResolveBundlePathInDirectory(Root, L"\\System\\Library\\Extensions",
+  if (ResolveBundlePathInDirectory(Root,
+                                   L"\\System\\Library\\Extensions"_XSW,
                                    bundleId, 1, MAX_BUNDLE_ID_INDEX_DEPTH,
                                    bundlePath)) {
     return true;
   }
 
-  if (ResolveBundlePathInDirectory(Root, L"\\Library\\Extensions", bundleId, 1,
-                                   MAX_BUNDLE_ID_INDEX_DEPTH, bundlePath)) {
+  if (ResolveBundlePathInDirectory(Root, L"\\Library\\Extensions"_XSW,
+                                   bundleId, 1, MAX_BUNDLE_ID_INDEX_DEPTH,
+                                   bundlePath)) {
     return true;
   }
 
