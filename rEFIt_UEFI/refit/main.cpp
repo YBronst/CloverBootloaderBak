@@ -748,6 +748,190 @@ void LOADER_ENTRY::FilterKextsToBlock() {
   }
 }
 
+namespace {
+const int MAX_BUNDLE_ID_INDEX_DEPTH = 2;
+
+class KEXT_BLOCK_PATH_RESOLUTION {
+public:
+  XString8 BundleId = XString8();
+  XString8 BundlePath = XString8();
+};
+
+XString8 NormalizeKextBundlePath(const XString8 &path) {
+  XString8 normalized = path;
+  normalized.replaceAll('\\', '/');
+  if (normalized.notEmpty() && normalized.char32At(0) != '/') {
+    normalized = "/"_XS8 + normalized;
+  }
+  return normalized;
+}
+
+XBool ReadKextBundleIdentifier(EFI_FILE *Root, const XStringW &kextPath,
+                               XString8 &bundleId) {
+  if (Root == NULL) {
+    return false;
+  }
+
+  XStringW infoPlistPath =
+      SWPrintf("%ls\\Contents\\Info.plist", kextPath.wc_str());
+  if (!FileExists(Root, infoPlistPath)) {
+    infoPlistPath = SWPrintf("%ls\\Info.plist", kextPath.wc_str());
+    if (!FileExists(Root, infoPlistPath)) {
+      return false;
+    }
+  }
+
+  EFI_STATUS Status;
+  UINT8 *infoPlistPtr = NULL;
+  UINTN infoPlistSize = 0;
+  TagDict *infoPlistDict = NULL;
+  const TagStruct *prop = NULL;
+  XBool found = false;
+
+  Status = egLoadFile(Root, infoPlistPath.wc_str(), &infoPlistPtr,
+                      &infoPlistSize);
+  if (!EFI_ERROR(Status)) {
+    Status = ParseXML(infoPlistPtr, &infoPlistDict, infoPlistSize);
+    if (!EFI_ERROR(Status) && infoPlistDict != NULL) {
+      prop = infoPlistDict->propertyForKey("CFBundleIdentifier");
+      if (prop != NULL && prop->isString() &&
+          prop->getString()->stringValue().notEmpty()) {
+        bundleId = prop->getString()->stringValue();
+        found = true;
+      }
+    }
+  }
+
+  if (infoPlistPtr != NULL) {
+    FreePool(infoPlistPtr);
+  }
+  if (infoPlistDict != NULL) {
+    infoPlistDict->ReleaseTag();
+  }
+
+  return found;
+}
+
+XBool ResolveBundlePathInDirectory(EFI_FILE *Root, const XStringW &directory,
+                                   const XString8 &bundleId, int depth,
+                                   int maxDepth, XString8 &bundlePath) {
+  REFIT_DIR_ITER DirIter;
+  EFI_FILE_INFO *DirEntry = NULL;
+
+  DirIterOpen(Root, directory.wc_str(), &DirIter);
+  while (DirIterNext(&DirIter, 1, L"*.kext", &DirEntry)) {
+    if (DirEntry->FileName[0] == L'.' ||
+        StrStr(DirEntry->FileName, L".kext") == NULL) {
+      continue;
+    }
+
+    XStringW kextPath =
+        SWPrintf("%ls\\%ls", directory.wc_str(), DirEntry->FileName);
+    XString8 foundBundleId;
+    if (ReadKextBundleIdentifier(Root, kextPath, foundBundleId) &&
+        foundBundleId == bundleId) {
+      bundlePath = NormalizeKextBundlePath(S8Printf("%ls", kextPath.wc_str()));
+      DirIterClose(&DirIter);
+      return true;
+    }
+
+    if (depth < maxDepth) {
+      XStringW plugInsPath =
+          SWPrintf("%ls\\Contents\\PlugIns", kextPath.wc_str());
+      if (ResolveBundlePathInDirectory(Root, plugInsPath, bundleId, depth + 1,
+                                       maxDepth, bundlePath)) {
+        DirIterClose(&DirIter);
+        return true;
+      }
+
+      XStringW pluginsPath =
+          SWPrintf("%ls\\Contents\\Plugins", kextPath.wc_str());
+      if (ResolveBundlePathInDirectory(Root, pluginsPath, bundleId, depth + 1,
+                                       maxDepth, bundlePath)) {
+        DirIterClose(&DirIter);
+        return true;
+      }
+    }
+  }
+  DirIterClose(&DirIter);
+  return false;
+}
+
+XBool ResolveKextBundlePath(EFI_FILE *Root, const XString8 &bundleId,
+                            XString8 &bundlePath) {
+  if (Root == NULL || bundleId.isEmpty()) {
+    return false;
+  }
+
+  if (ResolveBundlePathInDirectory(Root, L"\\System\\Library\\Extensions",
+                                   bundleId, 1, MAX_BUNDLE_ID_INDEX_DEPTH,
+                                   bundlePath)) {
+    return true;
+  }
+
+  if (ResolveBundlePathInDirectory(Root, L"\\Library\\Extensions", bundleId, 1,
+                                   MAX_BUNDLE_ID_INDEX_DEPTH, bundlePath)) {
+    return true;
+  }
+
+  return false;
+}
+
+EFI_FILE *GetSystemKextRoot(REFIT_VOLUME *Volume) {
+  if (Volume == NULL) {
+    return NULL;
+  }
+
+  if (Volume->ApfsRole != APPLE_APFS_VOLUME_ROLE_PREBOOT) {
+    return Volume->RootDir;
+  }
+
+  size_t numbers = Volumes.size();
+  for (size_t sysIndex = Volume->Index + 1; sysIndex < numbers; sysIndex++) {
+    REFIT_VOLUME *SystemVolume = &Volumes[sysIndex];
+    if (FileExists(SystemVolume->RootDir,
+                   L"\\System\\Library\\CoreServices\\boot.efi")) {
+      return SystemVolume->RootDir;
+    }
+  }
+
+  return Volume->RootDir;
+}
+
+XString8 ResolveKextBlockIdentifier(
+    EFI_FILE *Root, const XString8 &entryName,
+    XObjArray<KEXT_BLOCK_PATH_RESOLUTION> &cache) {
+  if (entryName.isEmpty()) {
+    return entryName;
+  }
+
+  if (entryName.contains(".kext"_XS8)) {
+    return NormalizeKextBundlePath(entryName);
+  }
+
+  for (size_t idx = 0; idx < cache.size(); idx++) {
+    if (cache[idx].BundleId == entryName) {
+      return cache[idx].BundlePath.notEmpty() ? cache[idx].BundlePath
+                                              : entryName;
+    }
+  }
+
+  XString8 resolvedPath;
+  if (ResolveKextBundlePath(Root, entryName, resolvedPath)) {
+    KEXT_BLOCK_PATH_RESOLUTION *resolution = new KEXT_BLOCK_PATH_RESOLUTION();
+    resolution->BundleId = entryName;
+    resolution->BundlePath = resolvedPath;
+    cache.AddReference(resolution, true);
+    return resolvedPath;
+  }
+
+  KEXT_BLOCK_PATH_RESOLUTION *resolution = new KEXT_BLOCK_PATH_RESOLUTION();
+  resolution->BundleId = entryName;
+  cache.AddReference(resolution, true);
+  return entryName;
+}
+} // namespace
+
 //
 // Null ConOut OutputString() implementation - for blocking
 // text output from boot.efi when booting in graphics mode
@@ -1658,6 +1842,9 @@ void LOADER_ENTRY::StartLoader() {
     }
 
     if (blockCount > 0) {
+      EFI_FILE *blockSysRoot = GetSystemKextRoot(Volume);
+      XObjArray<KEXT_BLOCK_PATH_RESOLUTION> blockResolutionCache;
+
       mOpenCoreConfiguration.Kernel.Block.Count = (UINT32)blockCount;
       mOpenCoreConfiguration.Kernel.Block.AllocCount =
           mOpenCoreConfiguration.Kernel.Block.Count;
@@ -1699,7 +1886,9 @@ void LOADER_ENTRY::StartLoader() {
         OC_STRING_ASSIGN(
             mOpenCoreConfiguration.Kernel.Block.Values[blockValueIdx]
                 ->Identifier,
-            blockEntry.Name.c_str());
+            ResolveKextBlockIdentifier(blockSysRoot, blockEntry.Name,
+                                       blockResolutionCache)
+                .c_str());
         OC_STRING_ASSIGN(
             mOpenCoreConfiguration.Kernel.Block.Values[blockValueIdx]->Strategy,
             "Exclude");
