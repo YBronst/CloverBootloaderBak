@@ -1482,7 +1482,6 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
   MacModel Model = GetModelFromString(smbiosSettings.ProductName);
   XBool isMacPro71 = (Model == MacPro71);
   XBool isOldMacPro = (Model == MacPro31) || (Model == MacPro41) || (Model == MacPro51) || (Model == MacPro61);
-  XBool isMacPro = isOldMacPro || isMacPro71;
   // Inject user memory tables
   if (smbiosSettings.InjectMemoryTables)
   {
@@ -1549,17 +1548,16 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
       newSmbiosTable.Type17->DeviceSet = bank + 1;
       newSmbiosTable.Type17->MemoryArrayHandle = mHandle16;
 
-      deviceLocator.setEmpty();
-      bankLocator.setEmpty();
-      if (isMacPro) {
+      if (isMacPro71) {
+        deviceLocator.S8Printf("DIMM%zu", Index + 1);
+        bankLocator.S8Printf("BANK %d", bank);
+        newSmbiosTable.Type17->TotalWidth = 72;
+        newSmbiosTable.Type17->DataWidth = 64;
+      } else if (isOldMacPro) {
         deviceLocator.S8Printf("DIMM%zd", Index + 1);
-        if (isMacPro71) {
-          newSmbiosTable.Type17->TotalWidth = 72;
-          newSmbiosTable.Type17->DataWidth = 64;
-          bankLocator.S8Printf("BANK %d", bank);
-        }
+        bankLocator.setEmpty();
       } else {
-        deviceLocator.S8Printf("DIMM%d", bank);
+        deviceLocator.S8Printf("DIMM%d", (int)bank);
         bankLocator.S8Printf("BANK %zu", Index % channels);
       }
       UpdateSmbiosString(newSmbiosTable, &newSmbiosTable.Type17->DeviceLocator, deviceLocator);
@@ -1916,29 +1914,27 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     }
 
     //now I want to update deviceLocator and bankLocator
-    deviceLocator.setEmpty();
-    bankLocator.setEmpty();
-    if (trustSMBIOS && (SmbiosTable.Raw != NULL)) {
-      deviceLocator = GetSmbiosString(SmbiosTable, SmbiosTable.Type17->DeviceLocator);
-      bankLocator = GetSmbiosString(SmbiosTable, SmbiosTable.Type17->BankLocator);
-    }
-
-    if (isMacPro) {
-      deviceLocator.S8Printf("DIMM%zd", Index + 1);
-      if (isMacPro71) {
-        newSmbiosTable.Type17->TotalWidth = 72;
-        newSmbiosTable.Type17->DataWidth = 64;
-        bankLocator.S8Printf("BANK %d", bank);
-      } else {
-        bankLocator.setEmpty();
+    if (isMacPro71) {
+      deviceLocator.setEmpty();
+      bankLocator.setEmpty();
+      if (trustSMBIOS && (SmbiosTable.Raw != NULL)) {
+        deviceLocator = GetSmbiosString(SmbiosTable, SmbiosTable.Type17->DeviceLocator);
+        bankLocator = GetSmbiosString(SmbiosTable, SmbiosTable.Type17->BankLocator);
       }
-    } else {
       if (deviceLocator.isEmpty()) {
-        deviceLocator.S8Printf("DIMM%d", bank);
+        deviceLocator.S8Printf("DIMM%zu", Index + 1);
       }
       if (bankLocator.isEmpty()) {
-        bankLocator.S8Printf("BANK %zu", Index % channels);
+        bankLocator.S8Printf("BANK %d", bank);
       }
+      newSmbiosTable.Type17->TotalWidth = 72;
+      newSmbiosTable.Type17->DataWidth = 64;
+    } else if (isOldMacPro) {
+      deviceLocator.S8Printf("DIMM%zd", Index + 1);
+      bankLocator.setEmpty();
+    } else {
+      deviceLocator.S8Printf("DIMM%d", (int)bank);
+      bankLocator.S8Printf("BANK %zu", Index % channels);
     }
 
     UpdateSmbiosString(newSmbiosTable, &newSmbiosTable.Type17->DeviceLocator, deviceLocator);
