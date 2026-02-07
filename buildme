@@ -423,28 +423,6 @@ else
 fi
 }
 
-buildApp() {
-local withClover=${1-"none"}
-if [[ "$SYSNAME" == Darwin ]]; then
-  if [[ -f "${CLOVERROOT}"/CloverPackage/CloverV2/EFI/CLOVER/CLOVERX64.efi ]]; then
-    rm -f "${CLOVERROOT}"/CloverPackage/sym/.withV2
-    mkdir -p "${CLOVERROOT}"/CloverPackage/sym
-    if [[ $withClover == withV2 ]]; then
-      touch "${CLOVERROOT}"/CloverPackage/sym/.withV2
-    fi
-    cd "${CLOVERROOT}"/CloverApp
-    echo "[BUILD APP]"
-    checkXCODE
-    make
-  else
-    echo && echo "please, build Clover first!"
-    sleep 3
-  fi
-else
-  echo && echo "Clover.app can only be built in macOS!"
-fi
-}
-
 buildIso() {
   cd "${CLOVERROOT}"/CloverPackage
   echo "[BUILD ISO]"

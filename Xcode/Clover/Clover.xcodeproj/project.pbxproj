@@ -583,7 +583,6 @@
 		A51C784721E0981C001385A7 /* HdaControllerMem.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HdaControllerMem.c; sourceTree = "<group>"; };
 		A51C784821E0981C001385A7 /* HdaModels.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = HdaModels.c; sourceTree = "<group>"; };
 		A523133C2448B43C00421FB2 /* Version.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Version.h; path = ../../Version.h; sourceTree = "<group>"; };
-		A5263CE424FEBD6E00B3EB14 /* CloverOldHeaders.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CloverOldHeaders.h; path = ../CloverApp/Clover/CloverOldHeaders.h; sourceTree = "<group>"; };
 		A5429219233538250001F42A /* Clover */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Clover; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5716F82235968BE000CEC60 /* Nasm.inc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.pascal; name = Nasm.inc; path = ../../Nasm.inc; sourceTree = "<group>"; };
 		A5716FD5235A1576000CEC60 /* InternalIsaBus.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = InternalIsaBus.h; sourceTree = "<group>"; };
