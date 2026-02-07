@@ -1334,7 +1334,6 @@ void GetTableType17(SmbiosDiscoveredSettings* smbiosSettings)
 //  return;
 //#endif
 
-  MacModel Model = GetModelFromString(smbiosSettings->ProductName);
   // Memory Device
   //
   XBool FoundOneTable;
@@ -1405,9 +1404,7 @@ void GetTableType17(SmbiosDiscoveredSettings* smbiosSettings)
       if (SmbiosTable.Type17->Size == 0x7FFF) {
         rsi.ModuleSize = SmbiosTable.Type17->ExtendedSize;
       }
-      if (Model == MacPro71) {
-        rsi.Type = SmbiosTable.Type17->MemoryType;
-      }
+      rsi.Type = SmbiosTable.Type17->MemoryType;
     }
     // Determine if module frequency is sane value
     if ((SmbiosTable.Type17->Speed > 0) && (SmbiosTable.Type17->Speed <= MAX_RAM_FREQUENCY)) {
