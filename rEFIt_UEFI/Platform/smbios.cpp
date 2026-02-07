@@ -1467,7 +1467,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
   XBool isMacPro = false;
 
   MacModel Model = GetModelFromString(smbiosSettings.ProductName);
-  if ((Model == MacPro31) || (Model == MacPro41) || (Model == MacPro51) || (Model == MacPro61) || (Model == MacPro71)) {
+  if ((Model == MacPro31) || (Model == MacPro41) || (Model == MacPro51) || (Model == MacPro61)) {
     isMacPro = true;
   }
   // Inject user memory tables
@@ -1485,7 +1485,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     }
     DBG("Channels: %d\n", UserChannels);
     // Setup interleaved channel map
-    if (channels >= 2) {
+    if (channels >= 2 && isMacPro) {
       UINT8 doubleChannels = (UINT8)UserChannels << 1;
       for (size_t Index = 0; Index < mMemory17.size(); ++Index) {
         channelMap[Index] = (UINT8)(((Index / doubleChannels) * doubleChannels) +
@@ -1749,7 +1749,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
   }
   DBG("Channels: %d\n", channels);
   // Setup interleaved channel map
-  if (channels >= 2) {
+  if (channels >= 2 && isMacPro) {
     UINT8 doubleChannels = (UINT8)channels << 1;
     for (size_t Index = 0; Index < mMemory17.size(); ++Index) {
       channelMap[Index] = (UINT8)(((Index / doubleChannels) * doubleChannels) +
