@@ -1480,7 +1480,9 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
   XBool trustSMBIOS = ( gRAM.SPD.size() == 0  ||  smbiosSettings.TrustSMBIOS);
   XBool wrongSMBIOSBanks = false;
   MacModel Model = GetModelFromString(smbiosSettings.ProductName);
+  XBool isMacPro71 = (Model == MacPro71);
   XBool isOldMacPro = (Model == MacPro31) || (Model == MacPro41) || (Model == MacPro51) || (Model == MacPro61);
+  XBool isMacPro = isOldMacPro || isMacPro71;
   // Inject user memory tables
   if (smbiosSettings.InjectMemoryTables)
   {
@@ -1496,7 +1498,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     }
     DBG("Channels: %d\n", UserChannels);
     // Setup interleaved channel map
-    if (channels >= 2 && isOldMacPro) {
+    if (channels >= 2 && !isMacPro71) {
       UINT8 doubleChannels = (UINT8)UserChannels << 1;
       for (size_t Index = 0; Index < mMemory17.size(); ++Index) {
         channelMap[Index] = (UINT8)(((Index / doubleChannels) * doubleChannels) +
@@ -1549,15 +1551,16 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
 
       deviceLocator.setEmpty();
       bankLocator.setEmpty();
-      if (isOldMacPro) {
+      if (isMacPro) {
         deviceLocator.S8Printf("DIMM%zd", Index + 1);
-      } else {
-        if (Model == MacPro71) {
+        if (isMacPro71) {
           newSmbiosTable.Type17->TotalWidth = 72;
           newSmbiosTable.Type17->DataWidth = 64;
+          bankLocator.S8Printf("BANK %d", bank);
         }
-        deviceLocator.S8Printf("DIMM%zu", Index + 1);
-        bankLocator.S8Printf("BANK %d", bank);
+      } else {
+        deviceLocator.S8Printf("DIMM%d", bank);
+        bankLocator.S8Printf("BANK %zu", Index % channels);
       }
       UpdateSmbiosString(newSmbiosTable, &newSmbiosTable.Type17->DeviceLocator, deviceLocator);
       if (bankLocator.notEmpty()) {
@@ -1772,7 +1775,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
   }
   DBG("Channels: %d\n", channels);
   // Setup interleaved channel map
-  if (channels >= 2 && isOldMacPro) {
+  if (channels >= 2 && !isMacPro71) {
     UINT8 doubleChannels = (UINT8)channels << 1;
     for (size_t Index = 0; Index < mMemory17.size(); ++Index) {
       channelMap[Index] = (UINT8)(((Index / doubleChannels) * doubleChannels) +
@@ -1788,7 +1791,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     DBG(" %d", channelMap[Index]);
   }
   DBG("\n");
-  if (Model == MacPro71 && expectedCount < 12) {
+  if (isMacPro71 && expectedCount < 12) {
     expectedCount = 12;
   }
 
@@ -1920,19 +1923,21 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
       bankLocator = GetSmbiosString(SmbiosTable, SmbiosTable.Type17->BankLocator);
     }
 
-    if (isOldMacPro) {
+    if (isMacPro) {
       deviceLocator.S8Printf("DIMM%zd", Index + 1);
-      bankLocator.setEmpty();
-    } else {
-      if (Model == MacPro71) {
+      if (isMacPro71) {
         newSmbiosTable.Type17->TotalWidth = 72;
         newSmbiosTable.Type17->DataWidth = 64;
+        bankLocator.S8Printf("BANK %d", bank);
+      } else {
+        bankLocator.setEmpty();
       }
+    } else {
       if (deviceLocator.isEmpty()) {
-        deviceLocator.S8Printf("DIMM%zu", Index + 1);
+        deviceLocator.S8Printf("DIMM%d", bank);
       }
       if (bankLocator.isEmpty()) {
-        bankLocator.S8Printf("BANK %d", bank);
+        bankLocator.S8Printf("BANK %zu", Index % channels);
       }
     }
 
@@ -1946,7 +1951,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     DBG("  SMBIOS Type 17 Index = %zd => SMBIOSIndex=%zu SPDIndex=%zu:\n", Index, SMBIOSIndex, SPDIndex);
     if (newSmbiosTable.Type17->Size == 0) {
       DBG("%s %s EMPTY\n", bankLocator.c_str(), deviceLocator.c_str());
-      if (Model == MacPro71) {
+      if (isMacPro71) {
         newSmbiosTable.Type17->MemoryType = MemoryTypeDdr4;
       } else {
         newSmbiosTable.Type17->MemoryType = 0; //MemoryTypeUnknown;
