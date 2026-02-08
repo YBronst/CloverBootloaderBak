@@ -233,10 +233,14 @@ public:
         XmlString8AllowEmpty Name = XmlString8AllowEmpty();
 
         XmlDictField m_fields[4] = {
+          {"Arch", Arch}
           {"Comment", Comment},
-          {"Disabled", Disabled},
-          {"MatchOS", MatchOS},
+          {"Enabled", Enabled},
+          {"Identifier", Identifier},
+          {"MaxKernel", MaxKernel},
+          {"MinKernel", MinKernel},
           {"Name", Name},
+            {"Strategy", Exclude},
         };
 
       public:
