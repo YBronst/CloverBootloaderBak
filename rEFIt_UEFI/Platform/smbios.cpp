@@ -1278,26 +1278,14 @@ void PatchTableType16(const SmbiosInjectedSettings& smbiosSettings)
   ZeroMem((void*)newSmbiosTable.Type16, MAX_TABLE_SIZE);
   CopyMem((void*)newSmbiosTable.Type16, (void*)SmbiosTable.Type16, TableSize);
   newSmbiosTable.Type16->Hdr.Handle = mHandle16;
-  MacModel Model = GetModelFromString(smbiosSettings.ProductName);
-
-  if (Model == MacPro71) {
-    newSmbiosTable.Type16->MemoryErrorCorrection = MemoryErrorCorrectionMultiBitEcc;
-    newSmbiosTable.Type16->MaximumCapacity = 0x60000000; // 1.5 TB in KB
-    newSmbiosTable.Type16->ExtendedMaximumCapacity = 0;
-  }
-
   // Slice - I am not sure if I want these values
   // newSmbiosTable.Type16->Location = MemoryArrayLocationProprietaryAddonCard;
   // newSmbiosTable.Type16->Use = MemoryArrayUseSystemMemory;
   // newSmbiosTable.Type16->MemoryErrorCorrection = MemoryErrorCorrectionMultiBitEcc;
   // MemoryErrorInformationHandle
   newSmbiosTable.Type16->MemoryErrorInformationHandle = 0xFFFF;
-  UINT16 DeviceCount = smbiosSettings.RamSlotCount; // RamSlotCount is <= MAX_RAM_SLOTS), see GetTableType16()
-  if (Model == MacPro71 && DeviceCount < 12) {
-    DeviceCount = 12;
-  }
-  newSmbiosTable.Type16->NumberOfMemoryDevices = DeviceCount;
-  DBG("NumberOfMemoryDevices = %d\n", DeviceCount);
+  newSmbiosTable.Type16->NumberOfMemoryDevices = smbiosSettings.RamSlotCount; // RamSlotCount is <= MAX_RAM_SLOTS), see GetTableType16()
+  DBG("NumberOfMemoryDevices = %d\n", smbiosSettings.RamSlotCount);
   LogSmbiosTable(newSmbiosTable);
 }
 
@@ -1404,7 +1392,6 @@ void GetTableType17(SmbiosDiscoveredSettings* smbiosSettings)
       if (SmbiosTable.Type17->Size == 0x7FFF) {
         rsi.ModuleSize = SmbiosTable.Type17->ExtendedSize;
       }
-      rsi.Type = SmbiosTable.Type17->MemoryType;
     }
     // Determine if module frequency is sane value
     if ((SmbiosTable.Type17->Speed > 0) && (SmbiosTable.Type17->Speed <= MAX_RAM_FREQUENCY)) {
@@ -1477,8 +1464,12 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
   XBool insertingEmpty = true;
   XBool trustSMBIOS = ( gRAM.SPD.size() == 0  ||  smbiosSettings.TrustSMBIOS);
   XBool wrongSMBIOSBanks = false;
+  XBool isMacPro = false;
+
   MacModel Model = GetModelFromString(smbiosSettings.ProductName);
-  XBool isOldMacPro = (Model == MacPro31) || (Model == MacPro41) || (Model == MacPro51) || (Model == MacPro61);
+  if ((Model == MacPro31) || (Model == MacPro41) || (Model == MacPro51) || (Model == MacPro61) || (Model == MacPro71)) {
+    isMacPro = true;
+  }
   // Inject user memory tables
   if (smbiosSettings.InjectMemoryTables)
   {
@@ -1494,7 +1485,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     }
     DBG("Channels: %d\n", UserChannels);
     // Setup interleaved channel map
-    if (channels >= 2 && Model != MacPro71) {
+    if (channels >= 2) {
       UINT8 doubleChannels = (UINT8)UserChannels << 1;
       for (size_t Index = 0; Index < mMemory17.size(); ++Index) {
         channelMap[Index] = (UINT8)(((Index / doubleChannels) * doubleChannels) +
@@ -1544,14 +1535,8 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
       newSmbiosTable.Type17->TypeDetail.Synchronous = true;
       newSmbiosTable.Type17->DeviceSet = bank + 1;
       newSmbiosTable.Type17->MemoryArrayHandle = mHandle16;
-      if (isOldMacPro) {
+      if (isMacPro) {
         deviceLocator.S8Printf("DIMM%zd", Index + 1);
-      } else if (Model == MacPro71) {
-        newSmbiosTable.Type17->TotalWidth = 72;
-        newSmbiosTable.Type17->DataWidth = 64;
-        deviceLocator.S8Printf("DIMM%zu", Index + 1);
-        bankLocator.S8Printf("BANK %d", bank);
-        UpdateSmbiosString(newSmbiosTable, &newSmbiosTable.Type17->BankLocator, bankLocator);
       } else {
         deviceLocator.S8Printf("DIMM%d", bank);
         bankLocator.S8Printf("BANK %zu", Index % channels);
@@ -1687,7 +1672,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     }
   }
   // Check for interleaved channels
-  if (channels >= 2 && Model != MacPro71) {
+  if (channels >= 2) {
     wrongSMBIOSBanks = ((gRAM.SMBIOS.doesSlotForIndexExist(1) != gRAM.SPD.doesSlotForIndexExist(1)) ||
                         (gRAM.SMBIOS.getSlotInfoForSlotIndex(1).ModuleSize != gRAM.SPD.getSlotInfoForSlotIndex(1).ModuleSize));
   }
@@ -1764,7 +1749,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
   }
   DBG("Channels: %d\n", channels);
   // Setup interleaved channel map
-  if (channels >= 2 && Model != MacPro71) {
+  if (channels >= 2) {
     UINT8 doubleChannels = (UINT8)channels << 1;
     for (size_t Index = 0; Index < mMemory17.size(); ++Index) {
       channelMap[Index] = (UINT8)(((Index / doubleChannels) * doubleChannels) +
@@ -1780,10 +1765,6 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     DBG(" %d", channelMap[Index]);
   }
   DBG("\n");
-  if (Model == MacPro71 && expectedCount < 12) {
-    expectedCount = 12;
-  }
-
   // Memory Device
   //
   for (size_t Index = 0; Index < mMemory17.size(); Index++) {
@@ -1905,22 +1886,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     }
 
     //now I want to update deviceLocator and bankLocator
-    if (Model == MacPro71) {
-      deviceLocator.setEmpty();
-      bankLocator.setEmpty();
-      if (trustSMBIOS && (SmbiosTable.Raw != NULL)) {
-        deviceLocator = GetSmbiosString(SmbiosTable, SmbiosTable.Type17->DeviceLocator);
-        bankLocator = GetSmbiosString(SmbiosTable, SmbiosTable.Type17->BankLocator);
-      }
-      newSmbiosTable.Type17->TotalWidth = 72;
-      newSmbiosTable.Type17->DataWidth = 64;
-      if (deviceLocator.isEmpty()) {
-        deviceLocator.S8Printf("DIMM%zu", Index + 1);
-      }
-      if (bankLocator.isEmpty()) {
-        bankLocator.S8Printf("BANK %d", bank);
-      }
-    } else if (isOldMacPro) {
+    if (isMacPro) {
       deviceLocator.S8Printf("DIMM%zd", Index + 1);
       bankLocator.setEmpty();
     } else {
@@ -1928,7 +1894,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
 		  bankLocator.S8Printf("BANK %zu", Index % channels);
     }
     UpdateSmbiosString(newSmbiosTable, &newSmbiosTable.Type17->DeviceLocator, deviceLocator);
-    if (isOldMacPro) {
+    if (isMacPro) {
       newSmbiosTable.Type17->BankLocator = 0; //like in MacPro5,1
     } else {
       UpdateSmbiosString(newSmbiosTable, &newSmbiosTable.Type17->BankLocator, bankLocator);
@@ -1936,11 +1902,7 @@ void PatchTableType17(const SmbiosInjectedSettings& smbiosSettings, XArray<UINT1
     DBG("  SMBIOS Type 17 Index = %zd => SMBIOSIndex=%zu SPDIndex=%zu:\n", Index, SMBIOSIndex, SPDIndex);
     if (newSmbiosTable.Type17->Size == 0) {
       DBG("%s %s EMPTY\n", bankLocator.c_str(), deviceLocator.c_str());
-      if (Model == MacPro71) {
-        newSmbiosTable.Type17->MemoryType = MemoryTypeDdr4;
-      } else {
-        newSmbiosTable.Type17->MemoryType = 0; //MemoryTypeUnknown;
-      }
+      newSmbiosTable.Type17->MemoryType = 0; //MemoryTypeUnknown;
     } else {
       insertingEmpty = false;
       DBG("%s %s %dMHz %dMB(Ext:%dMB)\n", bankLocator.c_str(), deviceLocator.c_str(), newSmbiosTable.Type17->Speed,
@@ -2316,10 +2278,6 @@ void PatchSmbios(const SmbiosInjectedSettings& smbiosSettings) //continue
   }
   PatchTableTypeSome();
   auto SlotCounts = smbiosSettings.RamSlotCount;
-  MacModel Model = GetModelFromString(smbiosSettings.ProductName);
-  if (Model == MacPro71 && SlotCounts < 12) {
-    SlotCounts = 12;
-  }
   if ( SlotCounts > MAX_RAM_SLOTS ) {
 //    log_technical_bug("GetTableType16() assign smbiosSettings.RamSlotCount a value bigger than MAX_RAM_SLOTS");
     SlotCounts = MAX_RAM_SLOTS;
@@ -2458,3 +2416,5 @@ void FinalizeSmbios(const SmbiosInjectedSettings& smbiosSettings) //continue
   //  egSaveFile(NULL, SWPrintf("%ls\\misc\\smbios.bin", self.getCloverDirFullPath().wc_str()).wc_str(), (UINT8*)(UINTN)SmbiosEpsNew, SmbiosEpsNew->TableLength);
   return;
 }
+
+

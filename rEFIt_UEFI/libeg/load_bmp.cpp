@@ -202,7 +202,7 @@ EFI_STATUS XImage::FromBMP(UINT8 *FileData, IN UINTN FileDataLength)
           PixelPtr->Reserved = AlphaValue;
           PixelPtr++;
         }
-        if ((RealPixelWidth & 1) == 1) { // for odd numbers
+        if ((RealPixelWidth & 1) == 1) { // для нечетных
           ImageValue = *ImagePtr++;
           
           Index = ImageValue >> 4;
@@ -247,7 +247,7 @@ EFI_STATUS XImage::FromBMP(UINT8 *FileData, IN UINTN FileDataLength)
         
     }
   }
-  DBG("success\n");
+  DBG("sucсess\n");
   return EFI_SUCCESS;
 }
 

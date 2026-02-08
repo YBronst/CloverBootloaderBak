@@ -148,7 +148,7 @@ DevPropDevice *devprop_add_device_pci(DevPropString *StringBuf, pci_dt_t *PciDt,
     return NULL;
   }
 
-  // scan StringBuf->entries[] for the same device
+  //просмотреть StringBuf->entries[] в поисках такого же девайса
   //SameDevice(DevPropDevice* D1, DevPropDevice* D2)
 
   if (!DevicePath && (PciDt != 0)) {

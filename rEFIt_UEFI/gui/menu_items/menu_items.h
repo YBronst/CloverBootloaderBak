@@ -443,7 +443,6 @@ class REFIT_ABSTRACT_MENU_ENTRY
         void          FilterKernelPatches();
         void          FilterKextPatches();
         void          FilterBootPatches();
-        void          FilterKextsToBlock();
         void          applyKernPatch(const UINT8 *find, UINTN size, const UINT8 *repl, const CHAR8 *comment);
         
         EFI_STATUS    SetFSInjection();

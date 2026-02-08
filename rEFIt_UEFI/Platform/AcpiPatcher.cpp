@@ -687,7 +687,9 @@ void PreCleanupRSDT()
   }
 
   //REVIEW: really?
-  // If RSDT address < XSDT address and RSDT tail overlaps with XSDT, then trim RSDT tail to the start of XSDT
+  // Если адрес RSDT < адреса XSDT и хвост RSDT наползает на XSDT, то подрезаем хвост RSDT до начала XSDT
+  // English: If the RSDT address of the XSDT address and the tail of the RSDT crawls onto the XSDT, then we
+  // trim the RSDT tail before the XSDT starts
   if ((UINTN)Rsdt < (UINTN)Xsdt && (UINTN)Rsdt + Rsdt->Header.Length > (UINTN)Xsdt) {
     UINTN v = ((UINTN)Xsdt - (UINTN)Rsdt) & ~3;
     Rsdt->Header.Length = (UINT32)v;

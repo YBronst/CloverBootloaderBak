@@ -88,48 +88,6 @@ UINTN FindSection(const UINT8 *Source, UINTN len, const UINT8* seg, const UINT8*
 /** Global for storing KextBundleIdentifier */
 CHAR8 gKextBundleIdentifier[256];
 
-static XBool ShouldBlockKext(const KERNEL_AND_KEXT_PATCHES& patches,
-                             const MacOsVersion& currOS,
-                             const XString8& bundleId,
-                             const KEXT_TO_BLOCK** matchedEntry)
-{
-  if (matchedEntry != nullptr) {
-    *matchedEntry = nullptr;
-  }
-
-  if (bundleId.isEmpty() || patches.KextsToBlock.isEmpty()) {
-    return false;
-  }
-
-  for (size_t i = 0; i < patches.KextsToBlock.size(); ++i) {
-    const KEXT_TO_BLOCK& entry = patches.KextsToBlock[i];
-    if (!entry.ShouldBlock(currOS)) {
-      continue;
-    }
-    if (!entry.MatchesBundleIdentifier(bundleId)) {
-      continue;
-    }
-    if (matchedEntry != nullptr) {
-      *matchedEntry = &entry;
-    }
-    return true;
-  }
-
-  return false;
-}
-
-static void BlockKextBinary(UINT8 *Driver, UINT32 DriverSize, const XString8& bundleId, const KEXT_TO_BLOCK* entry)
-{
-  const char* entryName = entry != nullptr ? entry->Name.c_str() : "<unknown>";
-  MsgLog("KextsToBlock: blocking %s (match: %s)\n", bundleId.c_str(), entryName);
-  if (Driver == nullptr || DriverSize < sizeof(UINT32)) {
-    MsgLog("KextsToBlock: unable to invalidate kext binary for %s\n",
-           bundleId.c_str());
-    return;
-  }
-  SetMem(Driver, sizeof(UINT32), 0);
-}
-
 /** Extracts kext BundleIdentifier from given Plist into gKextBundleIdentifier */
 void ExtractKextBundleIdentifier(CHAR8 *Plist)
 {
@@ -1111,14 +1069,6 @@ void LOADER_ENTRY::PatchKext(UINT8 *Driver, UINT32 DriverSize, CHAR8 *InfoPlist,
   }
   
   ExtractKextBundleIdentifier(InfoPlist);
-  if (gKextBundleIdentifier[0] != '\0') {
-    XString8 bundleId = gKextBundleIdentifier;
-    const KEXT_TO_BLOCK* matchedEntry = nullptr;
-    if (ShouldBlockKext(KernelAndKextPatches, macOSVersion, bundleId, &matchedEntry)) {
-      BlockKextBinary(Driver, DriverSize, bundleId, matchedEntry);
-      return;
-    }
-  }
   
   if ( (GlobalConfig.KPAppleIntelCPUPM) &&
       (AsciiStrStr(InfoPlist,
@@ -1519,7 +1469,6 @@ void LOADER_ENTRY::PatchLoadedKexts()
 void LOADER_ENTRY::KextPatcherStart()
 {
 //  if (isKernelcache) {
-    FilterKextsToBlock();
     DBG_RT("Patching kernelcache ...\n");
       Stall(2000000);
     PatchPrelinkedKexts();
@@ -1529,3 +1478,4 @@ void LOADER_ENTRY::KextPatcherStart()
     PatchLoadedKexts();
 //  }
 }
+
