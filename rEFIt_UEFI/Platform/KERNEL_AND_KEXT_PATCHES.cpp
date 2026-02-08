@@ -63,6 +63,67 @@ XBool ABSTRACT_PATCH::IsPatchEnabled(const MacOsVersion& CurrOS)
   return ret;
 }
 
+XBool KEXT_TO_BLOCK::ShouldBlock(const MacOsVersion& CurrOS) const
+{
+  if (Disabled || !MenuItem.BValue) {
+    return false;
+  }
+
+  XString8 name = Name;
+  name.trim();
+  if (name.isEmpty()) {
+    return false;
+  }
+
+  XString8 matchOS = MatchOS;
+  matchOS.trim();
+  if (matchOS.isEmpty() || CurrOS.isEmpty()) {
+    return true;
+  }
+
+  XString8 matchOSLower = matchOS;
+  matchOSLower.lowerAscii();
+  if (matchOSLower == "all"_XS8) {
+    return true;
+  }
+
+  XString8Array mos = Split<XString8Array>(matchOS, ","_XS8).trimEachString();
+  for (size_t i = 0; i < mos.size(); ++i) {
+    if (mos[i].isEmpty()) {
+      continue;
+    }
+    XString8 entryLower = mos[i];
+    entryLower.lowerAscii();
+    if (entryLower == "all"_XS8) {
+      return true;
+    }
+    if (CurrOS.match(mos[i])) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+XBool KEXT_TO_BLOCK::MatchesBundleIdentifier(const XString8& BundleId) const
+{
+  if (BundleId.isEmpty()) {
+    return false;
+  }
+
+  XString8 name = Name;
+  name.trim();
+  if (name.isEmpty()) {
+    return false;
+  }
+
+  if (name.contains(".")) {
+    return BundleId == name;
+  }
+
+  return BundleId.contains(name);
+}
+
 
 //
 //XBool KERNEL_AND_KEXT_PATCHES::IsPatchEnabledByBuildNumber(const XString8& Build)
