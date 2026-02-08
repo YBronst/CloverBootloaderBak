@@ -240,7 +240,7 @@ public:
           {"MaxKernel", MaxKernel},
           {"MinKernel", MinKernel},
           {"Name", Name},
-            {"Strategy", Exclude},
+            {"Strategy", Strategy},
         };
 
       public:
