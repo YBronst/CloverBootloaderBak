@@ -742,9 +742,20 @@ void LOADER_ENTRY::FilterKextsToBlock() {
   size_t entryCount = KernelAndKextPatches.KextsToBlock.size();
   size_t count = (settingsCount < entryCount) ? settingsCount : entryCount;
 
+  if (settingsCount != entryCount) {
+    MsgLog("KextsToBlock count mismatch: settings=%zu entries=%zu. "
+           "Missing values will use defaults.\n",
+           settingsCount, entryCount);
+  }
+
   for (size_t i = 0; i < count; ++i) {
     KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue =
         gSettings.KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue;
+  }
+
+  for (size_t i = count; i < entryCount; ++i) {
+    KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue =
+        !KernelAndKextPatches.KextsToBlock[i].Disabled;
   }
 }
 
