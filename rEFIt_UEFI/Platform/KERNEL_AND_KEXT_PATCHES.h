@@ -218,6 +218,7 @@ public:
   }
 
   XBool ShouldBlock(const MacOsVersion& CurrOS) const;
+  XBool MatchesBundleIdentifier(const XString8& BundleId) const;
 };
 
 class KERNEL_AND_KEXT_PATCHES

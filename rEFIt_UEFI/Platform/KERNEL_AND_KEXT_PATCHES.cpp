@@ -65,13 +65,19 @@ XBool ABSTRACT_PATCH::IsPatchEnabled(const MacOsVersion& CurrOS)
 
 XBool KEXT_TO_BLOCK::ShouldBlock(const MacOsVersion& CurrOS) const
 {
-  if (!MenuItem.BValue || Name.isEmpty()) {
+  if (Disabled || !MenuItem.BValue) {
+    return false;
+  }
+
+  XString8 name = Name;
+  name.trim();
+  if (name.isEmpty()) {
     return false;
   }
 
   XString8 matchOS = MatchOS;
   matchOS.trim();
-  if (matchOS.isEmpty()) {
+  if (matchOS.isEmpty() || CurrOS.isEmpty()) {
     return true;
   }
 
@@ -79,10 +85,6 @@ XBool KEXT_TO_BLOCK::ShouldBlock(const MacOsVersion& CurrOS) const
   matchOSLower.lowerAscii();
   if (matchOSLower == "all"_XS8) {
     return true;
-  }
-
-  if (CurrOS.isEmpty()) {
-    return false;
   }
 
   XString8Array mos = Split<XString8Array>(matchOS, ","_XS8).trimEachString();
@@ -101,6 +103,25 @@ XBool KEXT_TO_BLOCK::ShouldBlock(const MacOsVersion& CurrOS) const
   }
 
   return false;
+}
+
+XBool KEXT_TO_BLOCK::MatchesBundleIdentifier(const XString8& BundleId) const
+{
+  if (BundleId.isEmpty()) {
+    return false;
+  }
+
+  XString8 name = Name;
+  name.trim();
+  if (name.isEmpty()) {
+    return false;
+  }
+
+  if (name.contains(".")) {
+    return BundleId == name;
+  }
+
+  return BundleId.contains(name);
 }
 
 
