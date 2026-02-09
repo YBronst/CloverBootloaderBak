@@ -153,6 +153,132 @@ isPatchNameMatch (CHAR8   *BundleIdentifier, CHAR8   *Name)
       : (AsciiStrStr(BundleIdentifier, Name) != NULL);
 }
 
+static constexpr size_t MAX_BUNDLE_ID_INDEX_DEPTH = 2;
+
+static XString8 ExtractPlistStringValue(const CHAR8 *Plist, const CHAR8 *Key)
+{
+  XString8 Value;
+  if (Plist == NULL || Key == NULL) {
+    return Value;
+  }
+
+  const CHAR8 *KeyPos = AsciiStrStr(Plist, Key);
+  if (KeyPos == NULL) {
+    return Value;
+  }
+
+  const CHAR8 *StringStart = AsciiStrStr(KeyPos, "<string>");
+  if (StringStart == NULL) {
+    return Value;
+  }
+
+  StringStart += AsciiStrLen("<string>");
+  const CHAR8 *StringEnd = AsciiStrStr(StringStart, "</string>");
+  if (StringEnd == NULL || StringEnd <= StringStart) {
+    return Value;
+  }
+
+  Value.strncpy(StringStart, StringEnd - StringStart);
+  return Value;
+}
+
+static size_t CountKextDepth(const XString8 &BundlePath)
+{
+  if (BundlePath.isEmpty()) {
+    return 0;
+  }
+
+  XString8 Lower = BundlePath;
+  Lower.lowerAscii();
+
+  size_t Depth = 0;
+  size_t SearchPos = 0;
+  while (true) {
+    size_t Index = Lower.indexOf(".kext", SearchPos);
+    if (Index == MAX_XSIZE) {
+      break;
+    }
+    Depth++;
+    SearchPos = Index + 5;
+  }
+
+  return Depth;
+}
+
+static XString8 NormalizeBundlePath(const XString8 &Path)
+{
+  XString8 Normalized = Path;
+  Normalized.replaceAll('\\', '/');
+  if (Normalized.startWith('/')) {
+    Normalized = Normalized.subString(1, MAX_XSIZE);
+  }
+  return Normalized;
+}
+
+static XBool IsBundlePathMatch(const XString8 &BlockName, const XString8 &BundlePath)
+{
+  if (BlockName.isEmpty() || BundlePath.isEmpty()) {
+    return false;
+  }
+
+  XString8 NormalizedBlock = NormalizeBundlePath(BlockName);
+  XString8 NormalizedPath = NormalizeBundlePath(BundlePath);
+
+  if (NormalizedBlock == NormalizedPath) {
+    return true;
+  }
+
+  if (!BlockName.startWith('/')) {
+    return NormalizedPath.endWithOrEqualToIC(NormalizedBlock);
+  }
+
+  return false;
+}
+
+static XBool IsBlockEntryPathLike(const XString8 &Name)
+{
+  return Name.contains(".kext") || Name.contains("/") || Name.contains("\\");
+}
+
+static XBool ShouldBlockKext(const XString8 &BundleIdentifier,
+                             const XString8 &BundlePath,
+                             const MacOsVersion &CurrOS)
+{
+  size_t Depth = CountKextDepth(BundlePath);
+  if (Depth > MAX_BUNDLE_ID_INDEX_DEPTH) {
+    return false;
+  }
+
+  for (size_t Index = 0; Index < KernelAndKextPatches.KextsToBlock.size();
+       Index++) {
+    const KEXT_TO_BLOCK &Entry = KernelAndKextPatches.KextsToBlock[Index];
+    if (!Entry.ShouldBlock(CurrOS)) {
+      continue;
+    }
+
+    XString8 BlockName = Entry.Name;
+    BlockName.trim();
+    if (BlockName.isEmpty()) {
+      continue;
+    }
+
+    if (IsBlockEntryPathLike(BlockName)) {
+      if (IsBundlePathMatch(BlockName, BundlePath)) {
+        return true;
+      }
+      continue;
+    }
+
+    if (BundleIdentifier.notEmpty() &&
+        isPatchNameMatch((CHAR8 *)BundleIdentifier.c_str(),
+                         (CHAR8 *)BlockName.c_str())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 
 
 ////////////////////////////////////
@@ -1069,7 +1195,20 @@ void LOADER_ENTRY::PatchKext(UINT8 *Driver, UINT32 DriverSize, CHAR8 *InfoPlist,
   }
   
   ExtractKextBundleIdentifier(InfoPlist);
-  
+
+  XString8 PrelinkBundlePath =
+      ExtractPlistStringValue(InfoPlist, kPrelinkBundlePathKey);
+  if (ShouldBlockKext(XString8(gKextBundleIdentifier), PrelinkBundlePath,
+                      macOSVersion)) {
+    MsgLog("Blocking kext %s (%s)\n", gKextBundleIdentifier,
+           PrelinkBundlePath.notEmpty() ? PrelinkBundlePath.c_str()
+                                        : "<no path>");
+    if (Driver != NULL && DriverSize > 0) {
+      SetMem(Driver, DriverSize, 0);
+    }
+    return;
+  }
+
   if ( (GlobalConfig.KPAppleIntelCPUPM) &&
       (AsciiStrStr(InfoPlist,
                    "<string>com.apple.driver.AppleIntelCPUPowerManagement</string>") != NULL)) {
@@ -1478,4 +1617,3 @@ void LOADER_ENTRY::KextPatcherStart()
     PatchLoadedKexts();
 //  }
 }
-
