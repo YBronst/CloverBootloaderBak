@@ -240,7 +240,8 @@ static XBool IsBlockEntryPathLike(const XString8 &Name)
   return Name.contains(".kext") || Name.contains("/") || Name.contains("\\");
 }
 
-static XBool ShouldBlockKext(const XString8 &BundleIdentifier,
+static XBool ShouldBlockKext(const KERNEL_AND_KEXT_PATCHES &Patches,
+                             const XString8 &BundleIdentifier,
                              const XString8 &BundlePath,
                              const MacOsVersion &CurrOS)
 {
@@ -249,9 +250,9 @@ static XBool ShouldBlockKext(const XString8 &BundleIdentifier,
     return false;
   }
 
-  for (size_t Index = 0; Index < KernelAndKextPatches.KextsToBlock.size();
+  for (size_t Index = 0; Index < Patches.KextsToBlock.size();
        Index++) {
-    const KEXT_TO_BLOCK &Entry = KernelAndKextPatches.KextsToBlock[Index];
+    const KEXT_TO_BLOCK &Entry = Patches.KextsToBlock[Index];
     if (!Entry.ShouldBlock(CurrOS)) {
       continue;
     }
@@ -1198,8 +1199,8 @@ void LOADER_ENTRY::PatchKext(UINT8 *Driver, UINT32 DriverSize, CHAR8 *InfoPlist,
 
   XString8 PrelinkBundlePath =
       ExtractPlistStringValue(InfoPlist, kPrelinkBundlePathKey);
-  if (ShouldBlockKext(XString8(gKextBundleIdentifier), PrelinkBundlePath,
-                      macOSVersion)) {
+  if (ShouldBlockKext(KernelAndKextPatches, XString8(gKextBundleIdentifier),
+                      PrelinkBundlePath, macOSVersion)) {
     MsgLog("Blocking kext %s (%s)\n", gKextBundleIdentifier,
            PrelinkBundlePath.notEmpty() ? PrelinkBundlePath.c_str()
                                         : "<no path>");
