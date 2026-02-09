@@ -607,6 +607,18 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
+				<string>Patch_to_not_load_this_driver</string>
+				<key>Find</key>
+				<string>com.apple.driver.AppleHDA</string>
+				<key>InfoPlistPatch</key>
+				<true/>
+				<key>Name</key>
+				<string>AppleHDA</string>
+				<key>Replace</key>
+				<string>com.apple.driver.AppleHDX</string>
+			</dict>
+			<dict>
+				<key>Comment</key>
 				<string>Make all drives to be internal</string>
 				<key>Find</key>
 				<data>RXh0ZXJuYWw=</data>
