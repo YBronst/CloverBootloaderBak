@@ -459,6 +459,7 @@ class REFIT_ABSTRACT_MENU_ENTRY
         void      AddKextsFromDirInArray(const XString8& SrcDir, cpu_type_t archCpuType, XObjArray<SIDELOAD_KEXT>* kextArray);
         void      AddKextsInArray(XObjArray<SIDELOAD_KEXT>* kextArray);
         void      AddForceKextsInArray(XObjArray<SIDELOAD_KEXT>* kextArray);
+        XBool     IsKextBlocked(const SIDELOAD_KEXT& kext);
         void      KextPatcherRegisterKexts(void *FSInject, void *ForceLoadKexts);
         void      KextPatcherStart();
         void      PatchPrelinkedKexts();

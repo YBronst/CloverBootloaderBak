@@ -3184,6 +3184,7 @@ public:
   XStringW FileName = XStringW();
   XStringW KextDirNameUnderOEMPath = XStringW();
   XStringW Version = XStringW();
+  XString8 BundleID = XString8();
   INPUT_ITEM MenuItem = INPUT_ITEM();
 
   SIDELOAD_KEXT() : PlugInList() {};

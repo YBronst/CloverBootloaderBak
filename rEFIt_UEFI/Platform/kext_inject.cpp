@@ -430,6 +430,42 @@ void LOADER_ENTRY::LoadPlugInKexts(const EFI_FILE *RootDir, const XString8& DirN
 //}
 
 // Jief : this should replace LOADER_ENTRY::AddKexts
+XBool LOADER_ENTRY::IsKextBlocked(const SIDELOAD_KEXT& kext)
+{
+  if (KernelAndKextPatches.KextsToBlock.isEmpty()) {
+    return false;
+  }
+
+  XString8 kextName = S8Printf("%ls", kext.FileName.wc_str());
+  if (kextName.endWithOrEqualToIC(".kext"_XS8)) {
+    kextName = kextName.subString(0, kextName.length() - 5);
+  }
+
+  for (size_t i = 0; i < KernelAndKextPatches.KextsToBlock.size(); i++) {
+    const KEXT_TO_BLOCK& blockEntry = KernelAndKextPatches.KextsToBlock[i];
+    if (blockEntry.ShouldBlock(macOSVersion)) {
+      // Step 1: Match by name (exact or substring)
+      if (blockEntry.Name.isEqualIC(kextName) ||
+          blockEntry.Name.containsIC(kextName) ||
+          kextName.containsIC(blockEntry.Name)) {
+
+        // Step 2: Verify by BundleID
+        if (kext.BundleID.notEmpty() && blockEntry.Name.isEqualIC(kext.BundleID)) {
+          DBG("KextBlock: [%s] blocked from injection\n", kext.BundleID.c_str());
+          return true;
+        }
+
+        // Also block if the name match was exact
+        if (blockEntry.Name.isEqualIC(kextName)) {
+           DBG("KextBlock: [%s] blocked from injection (name match)\n", kextName.c_str());
+           return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 void LOADER_ENTRY::AddKextsFromDirInArray(const XString8& SrcDir, cpu_type_t archCpuType, XObjArray<SIDELOAD_KEXT>* kextArray)
 {
   XStringW                 FileName;
@@ -440,6 +476,9 @@ void LOADER_ENTRY::AddKextsFromDirInArray(const XString8& SrcDir, cpu_type_t arc
     SIDELOAD_KEXT& CurrentKext = InjectKextList[idx];
 //    DBG("  current kext name=%ls path=%ls, match against=%s\n", CurrentKext.FileName.wc_str(), CurrentKext.KextDirNameUnderOEMPath.wc_str(), Path.c_str());
     if ( CurrentKext.KextDirNameUnderOEMPath == SrcDir ) {
+      if (IsKextBlocked(CurrentKext)) {
+        continue;
+      }
       FileName = SWPrintf("%s\\%ls", SrcDir.c_str(), CurrentKext.FileName.wc_str());
       if (!(CurrentKext.MenuItem.BValue)) {
         // inject require
@@ -449,6 +488,9 @@ void LOADER_ENTRY::AddKextsFromDirInArray(const XString8& SrcDir, cpu_type_t arc
         // decide which plugins to inject
         for ( size_t idxPlugin = 0 ; idxPlugin < CurrentKext.PlugInList.size() ; idxPlugin ++ ) {
           SIDELOAD_KEXT& CurrentPlugInKext = CurrentKext.PlugInList[idxPlugin];
+          if (IsKextBlocked(CurrentPlugInKext)) {
+            continue;
+          }
           PlugInName = SWPrintf("%ls\\Contents\\PlugIns\\%ls", FileName.wc_str(), CurrentPlugInKext.FileName.wc_str());
           //     snwprintf(PlugInName, 512, L"%s\\%s\\%s", FileName, "Contents\\PlugIns", CurrentPlugInKext.FileName);
           if (!(CurrentPlugInKext.MenuItem.BValue)) {

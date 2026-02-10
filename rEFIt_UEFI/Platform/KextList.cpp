@@ -31,15 +31,18 @@ XObjArray<SIDELOAD_KEXT>        InjectKextList;
 /*
  * Relative path to SelfDir (the efi dir)
  */
-XStringW GetBundleVersion(const XStringW& pathUnderKextdDir)
+void GetKextInfo(const XStringW& pathUnderKextdDir, XStringW* CFBundleVersion, XString8* CFBundleIdentifier)
 {
   EFI_STATUS      Status;
-  XStringW        CFBundleVersion;
   XStringW        InfoPlistPath;
   UINT8*          InfoPlistPtr = NULL;
-  TagDict*      InfoPlistDict = NULL;
-  const TagStruct*      Prop = NULL;
+  TagDict*        InfoPlistDict = NULL;
+  const TagStruct* Prop = NULL;
   UINTN           Size;
+
+  if (CFBundleVersion) CFBundleVersion->setEmpty();
+  if (CFBundleIdentifier) CFBundleIdentifier->setEmpty();
+
   InfoPlistPath = SWPrintf("%ls\\%ls\\%ls", selfOem.getKextsDirPathRelToSelfDir().wc_str(), pathUnderKextdDir.wc_str(), L"Contents\\Info.plist");
   Status = egLoadFile(&self.getCloverDir(), InfoPlistPath.wc_str(), &InfoPlistPtr, &Size);
   if (EFI_ERROR(Status)) {
@@ -50,9 +53,17 @@ XStringW GetBundleVersion(const XStringW& pathUnderKextdDir)
     //DBG("about to parse xml file %ls\n", InfoPlistPath.wc_str());
     Status = ParseXML(InfoPlistPtr, &InfoPlistDict, Size);
     if(!EFI_ERROR(Status) && (InfoPlistDict != nullptr)) {
-      Prop = InfoPlistDict->propertyForKey("CFBundleVersion");
-      if (Prop != NULL && Prop->isString() && Prop->getString()->stringValue().notEmpty()) {
-        CFBundleVersion = SWPrintf("%s", Prop->getString()->stringValue().c_str());
+      if (CFBundleVersion) {
+        Prop = InfoPlistDict->propertyForKey("CFBundleVersion");
+        if (Prop != NULL && Prop->isString() && Prop->getString()->stringValue().notEmpty()) {
+          *CFBundleVersion = SWPrintf("%s", Prop->getString()->stringValue().c_str());
+        }
+      }
+      if (CFBundleIdentifier) {
+        Prop = InfoPlistDict->propertyForKey("CFBundleIdentifier");
+        if (Prop != NULL && Prop->isString() && Prop->getString()->stringValue().notEmpty()) {
+          *CFBundleIdentifier = Prop->getString()->stringValue();
+        }
       }
     }
   }
@@ -60,7 +71,6 @@ XStringW GetBundleVersion(const XStringW& pathUnderKextdDir)
     FreePool(InfoPlistPtr);
   }
   if ( InfoPlistDict ) InfoPlistDict->ReleaseTag();
-  return CFBundleVersion;
 }
 
 void GetListOfInjectKext(CHAR16 *KextDirNameUnderOEMPath)
@@ -100,10 +110,10 @@ void GetListOfInjectKext(CHAR16 *KextDirNameUnderOEMPath)
     mKext->FileName.SWPrintf("%ls", DirEntry->FileName);
     mKext->MenuItem.BValue = Blocked;
     mKext->KextDirNameUnderOEMPath.SWPrintf("%ls", KextDirNameUnderOEMPath);
-    mKext->Version = GetBundleVersion(pathUnderKextsDir);
+    GetKextInfo(pathUnderKextsDir, &mKext->Version, &mKext->BundleID);
     InjectKextList.AddReference(mKext, true);
 
-    DBG("Added Kext=%ls\\%ls (%ls)\n", mKext->KextDirNameUnderOEMPath.wc_str(), mKext->FileName.wc_str(), mKext->Version.wc_str());
+    DBG("Added Kext=%ls\\%ls (v.%ls, %s)\n", mKext->KextDirNameUnderOEMPath.wc_str(), mKext->FileName.wc_str(), mKext->Version.wc_str(), mKext->BundleID.c_str());
 
     // Obtain PlugInList
     // Iterate over PlugIns directory
@@ -120,9 +130,9 @@ void GetListOfInjectKext(CHAR16 *KextDirNameUnderOEMPath)
       mPlugInKext->FileName.SWPrintf("%ls", PlugInEntry->FileName);
       mPlugInKext->MenuItem.BValue = Blocked;
       mPlugInKext->KextDirNameUnderOEMPath = SWPrintf("%ls\\%ls\\Contents\\PlugIns", KextDirNameUnderOEMPath, mKext->FileName.wc_str());
-      mPlugInKext->Version = GetBundleVersion(PlugInsName);
+      GetKextInfo(PlugInsName, &mPlugInKext->Version, &mPlugInKext->BundleID);
       mKext->PlugInList.AddReference(mPlugInKext, true);
-      DBG("---| added plugin=%ls (%ls)\n", mPlugInKext->FileName.wc_str(), mPlugInKext->Version.wc_str());
+      DBG("---| added plugin=%ls (v.%ls, %s)\n", mPlugInKext->FileName.wc_str(), mPlugInKext->Version.wc_str(), mPlugInKext->BundleID.c_str());
     }
     DirIterClose(&PlugInsIter);
   }
