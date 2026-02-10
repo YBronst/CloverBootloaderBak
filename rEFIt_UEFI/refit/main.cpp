@@ -743,9 +743,8 @@ void LOADER_ENTRY::FilterKextsToBlock() {
   size_t count = (settingsCount < entryCount) ? settingsCount : entryCount;
 
   for (size_t i = 0; i < count; ++i) {
-    bool enabled = gSettings.KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue;
-    KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue = enabled;
-    KernelAndKextPatches.KextsToBlock[i].Disabled = !enabled;
+    KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue =
+        gSettings.KernelAndKextPatches.KextsToBlock[i].MenuItem.BValue;
   }
 }
 
@@ -1649,6 +1648,7 @@ void LOADER_ENTRY::StartLoader() {
           mOpenCoreConfiguration.Kernel.Force.Values[kextIdx]
               ->ExecutablePath.Value);
     }
+    FilterKextsToBlock();
     size_t blockCount = 0;
     for (size_t blockIdx = 0;
          blockIdx < KernelAndKextPatches.KextsToBlock.size(); blockIdx++) {
@@ -1928,7 +1928,6 @@ void LOADER_ENTRY::StartLoader() {
     FilterKextPatches();
     FilterKernelPatches();
     FilterBootPatches();
-    FilterKextsToBlock();
     if (LoadedImage &&
         !BooterPatch((UINT8 *)LoadedImage->ImageBase, LoadedImage->ImageSize)) {
       DBG("Will not patch boot.efi\n");
