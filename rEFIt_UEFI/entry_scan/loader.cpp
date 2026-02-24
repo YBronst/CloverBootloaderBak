@@ -2467,12 +2467,14 @@ void ScanLoader(void) {
                   egLoadFile(bootVolume->RootDir, targetNameFile.wc_str(),
                              (UINT8 **)&fileBuffer, &fileLen);
               if (!EFI_ERROR(Status)) {
-                FullTitle.SWPrintf("Boot Mac OS from %.*s", (int)fileLen,
-                                   fileBuffer);
-                FullTitleRecovery.SWPrintf("Boot Mac OS Recovery for %.*s",
-                                           (int)fileLen, fileBuffer);
-                FullTitleInstaller.SWPrintf("Boot Mac OS Install for %.*s",
-                                            (int)fileLen, fileBuffer);
+                XStringW contentDetailsName;
+                contentDetailsName.takeValueFrom(fileBuffer, fileLen);
+                FullTitle.SWPrintf("Boot Mac OS from %ls",
+                                   contentDetailsName.wc_str());
+                FullTitleRecovery.SWPrintf("Boot Mac OS Recovery for %ls",
+                                           contentDetailsName.wc_str());
+                FullTitleInstaller.SWPrintf("Boot Mac OS Install for %ls",
+                                            contentDetailsName.wc_str());
                 if (fileLen < MAX_INT32) {
                   DBG("      contentDetails name:%.*s\n", (int)fileLen,
                       fileBuffer);
